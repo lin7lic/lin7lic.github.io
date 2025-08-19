@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang=zh-tw>
+<head>
+    <title>Str to Unicode</title>
+    <meta charset="UTF-8">
+    <script src="/js/header.js"></script>
+    <link href="/css/offcanvas.css" rel="stylesheet">
+</head>
+<body>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/navbar_scroller.js"></script>
+    <br>
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <form>
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroup-sizing-default">Input String</span>
+                  </div>
+                  <input class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default" id="input_str" name="input_str">
+                </div>
+                
+                <button type="button" class="btn btn-primary" onclick="convert_to_unicode()">產生</button>
+            </form>
+            <h3 class="">Output</h3>
+            <div id='output_unicode'></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function convert_to_unicode () {
+            str=''
+			var str=document.getElementsByName("input_str")[0].value;
+            result=[...str].map(i => '\\u'+i.codePointAt().toString(16));
+            document.getElementById("output_unicode").innerHTML=result;
+        }
+    </script>
+</body>
+</html>

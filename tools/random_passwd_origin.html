@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+<html lang=zh-tw>
+ <head>
+  <title>隨機密碼密碼產生器</title>
+<meta charset="UTF-8">
+  <style>
+   body {
+     font-family: 'Helvetica Neue',Helvetica,Arial,'微軟正黑體','微软雅黑','メイリオ','맑은 고딕',sans-serif;
+     font-size: 15px;
+     line-height: 1.42857;
+     color: #2c3e50;
+     background-color: #fff;
+   }
+   div {
+    display: block;
+   }
+   .well {
+     min-height: 20px;
+     padding: 19px;
+     margin-bottom: 20px;
+     background-color: #ecf0f1;
+     border: 1px solid transparent;
+     border-radius: 4px;
+     -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+     box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+     width:50%;
+   }
+   .modal-content {
+     position: relative;
+     background-color: #fff;
+     border: 1px solid #999;
+     border: 1px solid rgba(0,0,0,.2);
+     border-radius: 6px;
+     -webkit-box-shadow: 0 3px 9px rgba(0,0,0,.5);
+     box-shadow: 0 3px 9px rgba(0,0,0,.5);
+     background-clip: padding-box;
+     outline: 0;
+   }
+   fieldset {
+     padding: 0;
+     margin: 0;
+     border: 0;
+     min-width: 0;
+     box-sizing: border-box;
+     display: block;
+     -webkit-margin-start: 2px;
+     -webkit-margin-end: 2px;
+     -webkit-padding-before: 0.35em;
+     -webkit-padding-start: 0.75em;
+     -webkit-padding-end: 0.75em;
+     -webkit-padding-after: 0.625em;
+   }
+   .col-xs-3, .col-sm-3, .col-md-3, .col-lg-3, .col-xs-4, .col-sm-4, .col-md-4, .col-lg-4, .col-xs-8, .col-sm-8, .col-md-8, .col-lg-8, .col-xs-9, .col-sm-9, .col-md-9, .col-lg-9 {
+    position: relative;
+    min-height: 1px;
+    padding-left: 15px;
+    padding-right: 15px;
+    }
+   label {
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: 5px;
+    font-weight: bold;
+   }
+
+   .row{
+    margin-left:-15px;
+    margin-right:-15px
+   }
+   .row:before,.row:after{
+    content:" ";
+    display:table
+   }
+   .row:after{
+    clear:both
+   }
+   .col-xs-3,.col-sm-3,.col-md-3,.col-lg-3,.col-xs-4,.col-sm-4,.col-md-4,.col-lg-4,.col-xs-8,.col-sm-8,.col-md-8,.col-lg-8,.col-xs-9,.col-sm-9,.col-md-9,.col-lg-9{
+    position:relative;
+    min-height:1px;
+    padding-left:15px;
+    padding-right:15px
+   }
+   .form-control{
+    display:block;
+    width:100%;
+    height:45px;
+    padding:10px 15px;
+    font-size:15px;
+    line-height:1.42857;
+    color:#2c3e50;
+    background-color:#fff;
+    background-image:none;
+    border:1px solid #dce4ec;
+    border-radius:4px;
+    -webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);
+    box-shadow:inset 0 1px 1px rgba(0,0,0,.075);
+    -webkit-transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+    -o-transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+    transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s
+   }
+   .form-control:focus{
+    border-color:#2c3e50;
+    outline:0;
+    -webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(44,62,80,.6);
+    box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(44,62,80,.6)
+   }
+   .form-control::-moz-placeholder{
+    color:#acb6c0;
+    opacity:1
+   }
+   .form-control:-ms-input-placeholder{
+    color:#acb6c0
+   }
+   .form-control::-webkit-input-placeholder{
+    color:#acb6c0
+   }
+   .form-control[disabled],.form-control[readonly],fieldset[disabled] .form-control{
+    background-color:#ecf0f1;
+    opacity:1
+   }
+   .form-control[disabled],fieldset[disabled] .form-control{
+    cursor:not-allowed
+   }
+   textarea.form-control{
+    height:auto
+   }
+
+   .carousel-control .icon-prev,.carousel-control .icon-next,.carousel-control .glyphicon-chevron-left,.carousel-control .glyphicon-chevron-right{
+    position:absolute;
+    top:50%;
+    z-index:5;
+    display:inline-block
+   }
+   .carousel-control .icon-prev,.carousel-control .glyphicon-chevron-left{
+    left:50%;
+    margin-left:-10px
+   }
+   .carousel-control .icon-next,.carousel-control .glyphicon-chevron-right{
+    right:50%;
+    margin-right:-10px
+   }
+   .btn-primary{
+    color:#fff;
+    background-color:#2c3e50;
+    border-color:#2c3e50
+   }
+   .btn-primary:hover,.btn-primary:focus,.btn-primary.focus,.btn-primary:active,.btn-primary.active,.open>.btn-primary.dropdown-toggle{
+    color:#fff;
+    background-color:#1a252f;
+    border-color:#161f29
+   }
+   .btn-primary:active,.btn-primary.active,.open>.btn-primary.dropdown-toggle{
+    background-image:none
+   }
+   .btn-primary.disabled,.btn-primary.disabled:hover,.btn-primary.disabled:focus,.btn-primary.disabled.focus,.btn-primary.disabled:active,.btn-primary.disabled.active,.btn-primary[disabled],.btn-primary[disabled]:hover,.btn-primary[disabled]:focus,.btn-primary[disabled].focus,.btn-primary[disabled]:active,.btn-primary[disabled].active,fieldset[disabled] .btn-primary,fieldset[disabled] .btn-primary:hover,fieldset[disabled] .btn-primary:focus,fieldset[disabled] .btn-primary.focus,fieldset[disabled] .btn-primary:active,fieldset[disabled] .btn-primary.active{
+    background-color:#2c3e50;
+    border-color:#2c3e50
+   }
+   .btn-primary .badge{
+    color:#2c3e50;
+    background-color:#fff
+   }
+   .glyphicon-share-alt:before {
+    content: "";
+   }
+   *:before, *:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+   }
+   .form-group-margin5{
+    margin:5px 0 5px 0
+   }
+   .btn {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: normal;
+    text-align: center;
+    vertical-align: middle;
+    touch-action: manipulation;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    padding: 10px 15px;
+    font-size: 15px;
+    line-height: 1.42857;
+    border-radius: 4px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+   }
+
+   .btn-primary {
+    color: #fff;
+    background-color: #2c3e50;
+    border-color: #2c3e50;
+   }
+
+  .panel-primary {
+    border-color: #2c3e50;
+  }
+  .panel {
+    margin-bottom: 21px;
+    background-color: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    width:53%;
+  }
+
+  .panel-primary>.panel-heading {
+    color: #fff;
+    background-color: #2c3e50;
+    border-color: #2c3e50;
+  }
+  .panel-heading {
+    padding: 10px 15px;
+    border-bottom: 1px solid transparent;
+    border-top-right-radius: 3px;
+    border-top-left-radius: 3px;
+  }
+  .panel-body:after {
+    clear: both;
+  }
+  .panel-body:before, .panel-body:after {
+    content: " ";
+    display: table;
+  }
+  .panel-title {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 17px;
+    color: inherit;
+  }
+  *:before, *:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+   }
+   h3 {
+    display: block;
+    font-size: 1.17em;
+    -webkit-margin-before: 1em;
+    -webkit-margin-after: 1em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+    font-weight: bold;
+    font-family: "Helvetica Neue",Helvetica,Arial,"Microsoft JhengHei","Microsoft YaHei",sans-serif;
+    font-weight: 400;
+    line-height: 1.1;
+    color: inherit;
+    }
+  </style>
+ </head>
+ <body>
+  <div class="well modal-content" >
+   <fieldset>
+   <form class="form-horizontal" id="AppForm" method="post" >
+      <div class="row form-group-margin5">
+         <label  class="col-lg-3 col-md-4 col-sm-3 control-label">產生密碼長度：</label>
+         <div class="col-lg-9 col-md-8 col-sm-9">
+            <select class="form-control" id="pwLength" name="pwLength">
+               <option value="2">2位數</option>
+               <option value="4">4位數</option>
+               <option value="6">6位數</option>
+               <option value="8">8位數</option>
+               <option value="10">10位數</option>
+               <option value="12" selected>12位數</option>
+               <option value="16">16位數</option>
+               <option value="32">32位數</option>
+            </select>
+         </div>
+      </div>
+      <div class="row form-group-margin5">
+         <label for="RP_Number_Select" class="col-lg-3 col-md-4 col-sm-3 control-label">產生密碼組數：</label>
+         <div class="col-lg-9 col-md-8 col-sm-9">
+            <select class="form-control" id="pwCounts" name="pwCounts">
+               <option value="1" selected>1組</option>
+               <option value="2">2組</option>
+               <option value="3">3組</option>
+               <option value="4">4組</option>
+               <option value="5">5組</option>
+               <option value="6">6組</option>
+               <option value="7">7組</option>
+               <option value="8">8組</option>
+               <option value="9">9組</option>
+               <option value="10">10組</option>
+            </select>
+         </div>
+      </div>
+      <div class="row form-group-margin5">
+         <label for="RP_Type_Select" class="col-lg-3 col-md-4 col-sm-3 control-label">產生密碼類型：</label>
+         <div class="col-lg-9 col-md-8 col-sm-9">
+          <input type="checkbox" name="pwType" value="Number" checked> 阿拉伯數字（0-9）<br>
+          <input type="checkbox" name="pwType" value="Upper" checked> 大寫英文字母（A-Z）<br>
+          <input type="checkbox" name="pwType" value="Lower" checked> 小寫英文字母（a-z）<br>
+          <input type="checkbox" name="pwType" value="Punctuation" checked> 特殊符號（鍵盤上除了\的所有輸入符號）<br><br>
+         </div>
+      </div>
+      <div class="row form-group-margin5">
+         <div class="col-lg-9 col-lg-offset-3 col-md-8 col-md-offset-4 col-sm-9 col-sm-offset-3">
+            <button type="button" class="btn btn-primary" style="outline: 0px;" onclick="CreatePW()">產生</button>
+        </div>
+      </div>
+   </form>
+</fieldset>
+</div>
+<div class="panel panel-primary">
+   <div class="panel-heading">
+      <h3 class="panel-title">產生的隨機密碼</h3>
+   </div>
+   <div class="panel-body" id='newPW'>
+   </div>
+</div>
+<script type="text/javascript">
+function CreatePW () {
+    var allPw={
+        "Number":"0123456789",
+        "Upper":"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "Lower":"abcdefghijklmnopqrstuvwxyz",
+        "Punctuation":"~!@#$%^&*()_+[]{}|`;:,./?><-="
+    }
+    var allowPw="";
+    for (var i = 0; i < document.getElementsByName("pwType").length; i++) {
+        if (document.getElementsByName("pwType")[i].checked) {
+            allowPw+=allPw[document.getElementsByName("pwType")[i].value];
+        };
+    };
+    var pwLength=parseInt(document.getElementsByName("pwLength")[0].value,10);
+    var pwCounts=parseInt(document.getElementsByName("pwCounts")[0].value,10);
+    var pwResult='<table class="table table-striped table-hover"><tbody>';
+    for (var c=0;c < pwCounts; c++){
+        pwResult+='<tr class="active"><td class="word-break-all"><input type="text" size="' + (pwLength+2) + '" value="';
+        for (var i = 0; i < pwLength; i++) {
+            var nowRandom=parseInt(Math.random()*allowPw.length,10);
+            pwResult+=allowPw.substring(nowRandom, nowRandom+1);
+
+        };
+        pwResult+='" readonly></td></tr>';
+    }
+    pwResult+='</tbody></table>';
+    document.getElementById("newPW").innerHTML=pwResult;
+}
+</script>

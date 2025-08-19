@@ -1,0 +1,57 @@
+<body>
+   <div id="wrapper">
+      <div id="bcontent">
+         <div id="content">
+            <h1>HTTP Packet Generator</h1>
+			<script src="/online-tool/html_packet/proof.js" type="text/javascript">proofPost();</script>
+            <div id="proof_res"></div>
+            <form name="query" action="" style="text-align:center">
+               <p class="big center">Generator:</p>
+               <div style="background:#aaa;padding:10px;width:100%;-webkit-border-radius: 10px;-moz-border-radius: 10px;-o-border-radius: 10px;border-radius: 10px;-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .3);-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, .3);-o-box-shadow: 0 1px 3px rgba(0, 0, 0, .3);box-shadow: 0 1px 3px rgba(0, 0, 0, .3);">
+                  <table>
+                     <tbody>
+                        <tr>
+                           <td class="ts1">URL</td>
+                           <td class="ts2"><input class="avg" name="url" size="40" onchange="queryedit(1)"  value="http://google.com/"/></td>
+                        </tr>
+                        <tr>
+                           <td class="ts1">Query type</td>
+                           <td class="ts2">
+                              <select class="avg" onchange="typechanged()" name="type">
+                                 <option>GET</option>
+                                 <option>POST</option>
+                                 <option>HEAD</option>
+                              </select>
+                           </td>
+                        </tr>
+                        <tr>
+                           <td class="ts1">Referer</td>
+                           <td class="ts2"><input class="avg" name="refer" size="40" value="http://abc.com/" /> not required</td>
+                        </tr>
+                        <tr>
+                           <td class="ts1">Cookie</td>
+                           <td class="ts2"><input class="avg" name="cookie" size="40" value="var1=val1&var2=val2"/> not required</td>
+                        </tr>
+                        <tr>
+                           <td class="ts1">User-Agent</td class="ts2">
+                           <td><input class="avg" name="agent" size="40" value="Mozilla/5.0 "/> not required</td>
+                        </tr>
+                        <tr>
+                           <td class="ts1">X-Forwarded-For</td>
+                           <td class="ts2"><input class="avg" size="40" name="forwarded" value="123.123.123.123"/> not required</td>
+                        </tr>
+                        <tr>
+                           <td class="ts1">POST data (for POST query)</td>
+                           <td class="ts2"><input class="avg" size="40" name="postdata" value="var1=val1&var2=val2" style="visibility:hidden"/> not required</td>
+                        </tr>
+                     </tbody>
+                  </table>
+                  <br/><input class="btn btngreen avg" name="link" type="button" value="Generate HTTP header" onclick="queryedit()"/>&nbsp<input class="btn btngray avg" type="button" value="Clear" onclick="clearform();typechanged()" />&nbsp;<input class="btn btngray avg" name="link" type="reset" value="Defaults"onclick="this.form.reset();typechanged();update_URL();"/><br/>
+               </div>
+               <br/>HTTP query:<br/>
+               <textarea class="left avg" name="resquery" rows="10" cols="80"></textarea>
+            </form>
+         </div>
+      </div>
+   </div>
+</body>

@@ -1,0 +1,92 @@
+input_focus()
+	background #fff
+	&:focus
+		border-color #66afe9
+		outline 0
+		-webkit-box-shadow inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6)
+		box-shadow inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6)
+
+.grey
+	color #999
+
+.strong
+	font-weight bold
+
+html, body
+	height 100%
+
+body
+	background-color #eee
+	background-image url('../img/bg.jpg')
+	background-size 100% 100%
+	padding-bottom 500px
+
+.brand
+	h1
+		margin 0
+	a
+		font-weight 100
+		color #555
+
+.group
+	padding 10px 20px
+	border-top 1px solid #eee
+	border-bottom 1px solid #bbb
+
+.affix
+	top 0
+	width 100%
+	padding 15px
+	background #eee
+	background rgba(255,255,255,0.5)
+	box-shadow 0 1px 5px #aaa
+	border-bottom 1px solid #fff
+
+#exp, #exp_dsp, #flags, #match, #txt
+	font-size 14px
+	font-family Menlo, Consolas, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace, serif
+
+#exp
+	min-height 34px
+	padding 6px 12px
+	margin 0
+	input_focus()
+
+.popover
+	max-width 100%
+	width auto
+
+#exp_dsp
+	display inline-block
+	cursor pointer
+	white-space pre-wrap
+	.error
+		color #F13F86
+
+#match
+	background #fff
+	border-radius 3px
+	box-shadow 0 1px 3px #aaa
+	padding 10px
+.g
+	white-space pre-wrap
+	background #eee
+	border-radius 4px
+
+#txt
+	min-height 300px
+	ol li:first-child
+		opacity 0.5
+	input_focus()
+
+#txt
+	i, b
+		border-radius 4px
+		font-style normal
+		font-weight normal
+	i
+		background #CFF5FF
+		box-shadow 0 0 0 1px #0099FF
+	b
+		background #FFDFFF
+		box-shadow 0 0 0 1px #DF56AD

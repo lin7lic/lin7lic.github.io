@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="./js/header.js"></script>
+    <link href="./css/offcanvas.css" rel="stylesheet">
+</head>
+<body>
+    <script src="./js/navbar.js"></script>
+    <script src="./js/navbar_scroller.js"></script>
+    <br>
+<div class="row">
+	<div class="col-md-6 offset-md-3 table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">1</th>
+              <th scope="col">2</th>
+            </tr>
+          </thead>
+          <tbody>
+	    <tr>
+              <th scope="row">0</th>
+              <td>OS version</td>
+              <td>cat /etc/*{release,version}</td>
+            </tr>
+            <tr>
+              <th scope="row">1</th>
+              <td>Zip</td>
+              <td>zip -r a.zip dir</td>
+            </tr>
+            <tr>
+              <th scope="row">2</th>
+              <td>Count</td>
+              <td>ls -l | wc -l</td>
+            </tr>
+            <tr>
+              <th scope="row">3</th>
+              <td>vim clean</td>
+              <td>gg + dG</td>
+            </tr>
+            <tr>
+              <th scope="row">4</th>
+              <td>vim search</td>
+              <td>
+                1.esc + / or ? <br> 
+                2.input string <br>
+                3.click 'n' to find next<br>
+                ps. / 向下 ? 向上 ,click 'N' 反向
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">5</th>
+              <td>tmux</td>
+              <td>
+                上下分：ctrl + b 再按 "<br> 
+                左右分：ctrl + b 再按 %<br> 
+                切换螢幕：ctrl + b 再按o<br> 
+                關閉一個：ctrl + b 再按x<br> 
+                上下分與左右分切換： ctrl + b 再按空白<br> 
+                開啟滑鼠功能 ctrl + b 再輸入 :setw -g mouse on<br> 
+		<hr>
+		重新命名 window : ctrl + b 再按 ,<br> 
+		新增 window : ctrl + b 再按 c<br> 
+		切換 window by number : ctrl + b 再按0-9<br> 
+		更改 session 名稱 : crtl + b 再按 $<br> 
+		<a href="https://tmuxcheatsheet.com/">tmuxcheatsheet.com</a>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">6</th>
+              <td>資料夾大小</td>
+              <td>
+                du -shc ./*
+              </td>
+            </tr>
+          </tbody>
+        </table>
+	</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang=zh-tw>
+<head>
+    <title>Random</title>
+    <meta charset="UTF-8">
+    <script src="/js/header.js"></script>
+    <link href="/css/offcanvas.css" rel="stylesheet">
+</head>
+<body>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/navbar_scroller.js"></script>
+    <br>
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <form>
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroup-sizing-default">Create Length</span>
+                  </div>
+                  <input type="number" class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default" id="pwLength" name="pwLength" value=10>
+                </div>
+                <div class="input-group mb-3">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroup-sizing-default">Create Number</span>
+                  </div>
+                  <input type="number" class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default" id="pwCounts" name="pwCounts" value=1>
+                </div>
+
+                <div class="form-check">
+                    <label class="form-check-label">
+                        <input type="checkbox" class="form-check-input" name="pwType" value="Number" checked> 阿拉伯數字（0-9）<br>
+                        <input type="checkbox" class="form-check-input" name="pwType" value="Upper" checked> 大寫英文字母（A-Z）<br>
+                        <input type="checkbox" class="form-check-input" name="pwType" value="Lower" checked> 小寫英文字母（a-z）<br>
+                        <input type="checkbox" class="form-check-input" name="pwType" value="Punctuation" checked> 特殊符號（鍵盤上除了\的所有輸入符號）<br><br>
+                    </label>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="CreatePW()">產生</button>
+            </form>
+            <h3 class="">Output</h3>
+            <div id='newPW'></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function CreatePW () {
+            var allPw={
+                "Number":"0123456789",
+                "Upper":"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                "Lower":"abcdefghijklmnopqrstuvwxyz",
+                "Punctuation":"~!@#$%^&*()_+[]{}|`;:,./?><-="
+            }
+            var allowPw="";
+            for (var i = 0; i < document.getElementsByName("pwType").length; i++) {
+                if (document.getElementsByName("pwType")[i].checked) {
+                    allowPw+=allPw[document.getElementsByName("pwType")[i].value];
+                };
+            };
+            var pwLength=parseInt(document.getElementsByName("pwLength")[0].value,10);
+            var pwCounts=parseInt(document.getElementsByName("pwCounts")[0].value,10);
+            var pwResult='';
+            for (var c=0;c < pwCounts; c++){
+                for (var i = 0; i < pwLength; i++) {
+                    var nowRandom=parseInt(Math.random()*allowPw.length,10);
+                    pwResult+=allowPw.substring(nowRandom, nowRandom+1);
+                };
+                pwResult+='<br>';
+            }
+            pwResult+='';
+            document.getElementById("newPW").innerHTML=pwResult;
+        }
+    </script>
+</body>
+</html>

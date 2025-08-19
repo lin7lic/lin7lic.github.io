@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" manifest='regex-builder.manifest'>
+<head>
+	<meta name="viewport" content="width=device-width">
+	<meta charset="UTF-8">
+	<title>Regex Builder</title>
+	<!--
+	<link rel="shortcut icon" href="favicon.ico" />-->
+	<link rel="stylesheet" type="text/css" href="bowercomponents/bootstrap/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="lib/regex-colorizer/nobg.css">
+	<link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+
+<div id='main' class='form-inline'>
+	<div class="affix-placeholder"></div>
+
+	<div class="affix">
+		<div class="row">
+			<div class="col-xs-8">
+				<label for="exp">
+					<a href="http://xregexp.com/" target="_blank"
+						data-placement="bottom" title="Supports both native RegExp and XRegExp"
+					>
+						XRegExp
+					</a>:
+				</label>
+				<div id='exp_dsp' class="grey" data-placement="bottom"  title='Click to select all'></div>
+				<pre id='exp' class='regex' save='text' contenteditable='true' spellcheck='false'></pre>
+			</div>
+			<div class="clearfix visible-xs"></div>
+			<div class="col-xs-2">
+				<label for="flags">Flags</label>
+				<input id='flags' save='val' class='form-control' type="text"
+					data-placement='bottom'
+					value='g' title='Set flags here: g, i, m, y, n, s, x, A'
+				>
+			</div>
+			<div class="col-xs-2">
+				<label for="exe_delay">Delay</label>
+				<input type="number" id="exe_delay" bind='exe_delay' save='val' class="form-control"
+					data-placement='bottom'
+					min=0 value="300" title="Execution delay, millisecond"
+				>
+			</div>
+		</div>
+	</div>
+
+	<div class="brand group">
+		<h1 class="text-center">Regex Builder</h1>
+	</div>
+
+	<div class="group">
+		<label for='txt' title='Matched words are highlighted'>Visual</label>
+		<label class="pull-right">
+			<input id="txt_hide_switch" type="checkbox" save='val' class="switch_hide" target="txt"> Hide
+		</label>
+		<pre id='txt' save='text' contenteditable='true' spellcheck='false'></pre>
+	</div>
+
+	<div class="group">
+		<label for='match' title='Result is json formated'>Match</label>
+		<label class="pull-right">
+			<input id="match_hide_switch" type="checkbox" save='val' class="switch_hide" target="match"> Hide
+		</label>
+		<div id='match'></div>
+	</div>
+
+	<div class="group">
+		<div class="input-group" title="copy here to share your current state">
+			<span class="input-group-btn">
+				<button class="btn btn-default" onclick="share_state()" type="button">Share</button>
+			</span>
+			<input id="share" type="text" class="form-control"
+				placeholder='click Apply to apply the shared state.' spellcheck='false'
+			>
+			<span class="input-group-btn">
+				<button class="btn btn-default" onclick="apply_state()" type="button">Apply</button>
+			</span>
+		</div>
+	</div>
+
+</div>
+
+<footer>
+	<div class="group text-center grey">
+		2019 <a href="" target="_blank"></a>
+	</div>
+</footer>
+
+<script type="text/javascript" src="bowercomponents/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="bowercomponents/bootstrap/dist/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="bowercomponents/xregexp/xregexp-all.js"></script>
+<script type="text/javascript" src="lib/regex-colorizer/regex-colorizer.js"></script>
+<script type="text/javascript" src="lib/lz-string-1.3.3.js"></script>
+
+<script src="lib/main.js"></script>
+
+</body>
+</html>
