@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GIF 圖庫與網址複製器</title>
+    <title>GIF 圖庫與檔案複製器</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -15,6 +15,8 @@
         h2 {
             text-align: center;
             color: #cccccc;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
         }
         .gallery {
             display: flex;
@@ -39,22 +41,22 @@
             transform: scale(1.15);
             border-color: #4da6ff;
         }
-        /* 複製成功的提示框 */
+        /* 提示框加入多種狀態顏色 */
         #toast {
             position: fixed;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #4da6ff;
-            color: #121212;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 12px 24px;
+            border-radius: 30px;
             font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s, visibility 0.3s;
             z-index: 1000;
+            text-align: center;
+            white-space: nowrap;
         }
         #toast.show {
             opacity: 1;
@@ -64,12 +66,12 @@
 </head>
 <body>
 
-    <h2>點擊圖示即可複製圖片網址</h2>
+    <h2>點擊圖示即可複製檔案（若瀏覽器阻擋則自動下載）</h2>
     <div class="gallery" id="gallery"></div>
-    <div id="toast">已複製網址！</div>
+    <div id="toast">已複製！</div>
 
     <script>
-        // 你的 GIF 檔名清單 (已為你整理好)
+        // 你的 GIF 檔名清單
         const gifs = [
             "p628059057.gif", "p628059059.gif", "p628059060.gif", "p628059061.gif", "p628059062.gif",
             "p628059063.gif", "p628059064.gif", "p628059065.gif", "p628059067.gif", "p628059068.gif",
@@ -91,41 +93,60 @@
         const toast = document.getElementById('toast');
         let toastTimeout;
 
-        // 動態取得當前網頁所在的目錄路徑 (去除 index.html)
-        const baseUrl = window.location.href.split('?')[0].replace(/index\.html$/, '');
-
-        // 動態生成圖片
         gifs.forEach(filename => {
             const img = document.createElement('img');
             img.src = filename;
             img.alt = filename;
-            img.title = filename; // 滑鼠懸停時會顯示檔名
+            img.title = filename;
             img.className = 'icon-card';
 
-            // 點擊事件：組合完整 URL 並複製
-            img.addEventListener('click', () => {
-                // 產生適合外部引用的完整 GitHub Pages 網址
-                const fullUrl = new URL(filename, baseUrl).href;
-                
-                // 寫入剪貼簿
-                navigator.clipboard.writeText(fullUrl).then(() => {
-                    showToast();
-                }).catch(err => {
-                    console.error('複製失敗:', err);
-                    alert('複製失敗，請檢查瀏覽器權限');
-                });
+            img.addEventListener('click', async () => {
+                try {
+                    // 1. 抓取圖片並轉換成二進位 Blob 實體檔案格式
+                    const response = await fetch(filename);
+                    const blob = await response.blob();
+
+                    try {
+                        // 2. 嘗試將 GIF 實體檔案寫入剪貼簿
+                        const item = new ClipboardItem({ [blob.type]: blob });
+                        await navigator.clipboard.write([item]);
+                        showToast('✅ 已複製 GIF 檔案！請在 Discord 直接貼上', 'success');
+                    } catch (clipboardError) {
+                        // 3. 備用方案：若瀏覽器阻擋寫入 GIF，則觸發自動下載
+                        console.warn('瀏覽器不支援直接寫入動態 GIF 到剪貼簿，觸發自動下載。', clipboardError);
+                        
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        showToast('⚠️ 瀏覽器限制複製，已為您秒速下載！請直接拖曳到 Discord', 'warning');
+                    }
+                } catch (err) {
+                    console.error('獲取檔案失敗:', err);
+                    showToast('❌ 處理圖片失敗', 'error');
+                }
             });
 
             gallery.appendChild(img);
         });
 
-        // 顯示提示框的函數
-        function showToast() {
+        // 動態顯示與更換提示框顏色的函數
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            
+            // 根據不同狀況調整顏色
+            toast.style.backgroundColor = type === 'warning' ? '#ffcc00' : (type === 'error' ? '#ff4d4d' : '#4da6ff');
+            toast.style.color = type === 'warning' ? '#121212' : (type === 'error' ? '#ffffff' : '#121212');
+            
             clearTimeout(toastTimeout);
             toast.classList.add('show');
+            // 將顯示時間拉長到 3 秒，方便看清楚提示文字
             toastTimeout = setTimeout(() => {
                 toast.classList.remove('show');
-            }, 2000); // 2 秒後消失
+            }, 3000);
         }
     </script>
 </body>
