@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIF 圖庫與網址複製器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            padding: 20px;
+            margin: 0;
+        }
+        h2 {
+            text-align: center;
+            color: #cccccc;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .icon-card {
+            width: 56px;
+            height: 56px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background-color: #2d2d2d;
+            padding: 4px;
+            transition: transform 0.1s ease, border-color 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .icon-card:hover {
+            transform: scale(1.15);
+            border-color: #4da6ff;
+        }
+        /* 複製成功的提示框 */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4da6ff;
+            color: #121212;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+        }
+        #toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>點擊圖示即可複製圖片網址</h2>
+    <div class="gallery" id="gallery"></div>
+    <div id="toast">已複製網址！</div>
+
+    <script>
+        // 你的 GIF 檔名清單 (已為你整理好)
+        const gifs = [
+            "p628059057.gif", "p628059059.gif", "p628059060.gif", "p628059061.gif", "p628059062.gif",
+            "p628059063.gif", "p628059064.gif", "p628059065.gif", "p628059067.gif", "p628059068.gif",
+            "p628059071.gif", "p628059072.gif", "p628059073.gif", "p628059074.gif", "p628059075.gif",
+            "p628059076.gif", "p628059077.gif", "p628059079.gif", "p628059080.gif", "p628059081.gif",
+            "p628059083.gif", "p628059087.gif", "p628059088.gif", "p628059091.gif", "p628059092.gif",
+            "p628059095.gif", "p628059098.gif", "p628059100.gif", "p628059101.gif", "p628059105.gif",
+            "p628059106.gif", "p628059108.gif", "p628059109.gif", "p628059113.gif", "p628059114.gif",
+            "p628059117.gif", "p628059118.gif", "p628059121.gif", "p628059123.gif", "p628059129.gif",
+            "p628059130.gif", "p628059131.gif", "p628059132.gif", "p628059134.gif", "p628059135.gif",
+            "p628059136.gif", "p628059137.gif", "p628059138.gif", "p628059139.gif", "p628059140.gif",
+            "p628059141.gif", "p628059142.gif", "p628059143.gif", "p628059144.gif", "p628059145.gif",
+            "p628059146.gif", "p628059149.gif", "p628059150.gif", "p628059151.gif", "p628059152.gif",
+            "p628059153.gif", "p628059154.gif", "p628059156.gif", "p628059157.gif", "p628059159.gif",
+            "p628059160.gif"
+        ];
+
+        const gallery = document.getElementById('gallery');
+        const toast = document.getElementById('toast');
+        let toastTimeout;
+
+        // 動態取得當前網頁所在的目錄路徑 (去除 index.html)
+        const baseUrl = window.location.href.split('?')[0].replace(/index\.html$/, '');
+
+        // 動態生成圖片
+        gifs.forEach(filename => {
+            const img = document.createElement('img');
+            img.src = filename;
+            img.alt = filename;
+            img.title = filename; // 滑鼠懸停時會顯示檔名
+            img.className = 'icon-card';
+
+            // 點擊事件：組合完整 URL 並複製
+            img.addEventListener('click', () => {
+                // 產生適合外部引用的完整 GitHub Pages 網址
+                const fullUrl = new URL(filename, baseUrl).href;
+                
+                // 寫入剪貼簿
+                navigator.clipboard.writeText(fullUrl).then(() => {
+                    showToast();
+                }).catch(err => {
+                    console.error('複製失敗:', err);
+                    alert('複製失敗，請檢查瀏覽器權限');
+                });
+            });
+
+            gallery.appendChild(img);
+        });
+
+        // 顯示提示框的函數
+        function showToast() {
+            clearTimeout(toastTimeout);
+            toast.classList.add('show');
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000); // 2 秒後消失
+        }
+    </script>
+</body>
+</html>
