@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sqlmap 指令產生器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e28;
+    --border: #252a38;
+    --border2: #2e3548;
+    --accent: #00e5a0;
+    --accent2: #00b87e;
+    --accent-dim: rgba(0,229,160,0.08);
+    --accent-dim2: rgba(0,229,160,0.15);
+    --text: #e8ecf5;
+    --text2: #8891a8;
+    --text3: #4e5670;
+    --danger: #ff4d6d;
+    --warn: #ffb74d;
+    --info: #4d9fff;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  /* grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .logo-box {
+    width: 48px; height: 48px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(0,229,160,0.2);
+  }
+
+  .logo-box svg { width: 24px; height: 24px; }
+
+  .header-text h1 {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .header-text h1 span { color: var(--accent); }
+
+  .header-text p {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid;
+    font-family: var(--mono);
+    vertical-align: middle;
+  }
+
+  .badge-green { border-color: var(--accent); color: var(--accent); }
+  .badge-warn { border-color: var(--warn); color: var(--warn); }
+  .badge-info { border-color: var(--info); color: var(--info); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+
+  textarea, input, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus, input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,229,160,0.1);
+  }
+
+  textarea { resize: vertical; }
+
+  select option { background: var(--surface2); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 5px;
+  }
+
+  /* toggle tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tag:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tag.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* buttons */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 22px;
+    border-radius: 6px;
+    border: 1px solid;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border-color: var(--border2);
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  /* output */
+  .output-card {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+    box-shadow: 0 0 30px rgba(0,229,160,0.08);
+  }
+
+  .output-header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .output-label {
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+  .output-body {
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: #c0fce0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.8;
+    min-height: 80px;
+  }
+
+  .output-placeholder { color: var(--text3); }
+
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover { background: var(--accent-dim2); }
+
+  /* syntax highlight */
+  .kw { color: var(--warn); }
+  .flag { color: #7dd8ff; }
+  .val { color: #c0fce0; }
+  .str { color: #ffa07a; }
+
+  .error-msg {
+    color: var(--danger);
+    font-size: 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    background: rgba(255,77,109,0.05);
+    margin-top: 12px;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 4px 0 16px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>sqlmap <span>Generator</span></h1>
+      <p>貼入 HTTP request → 自動產生 sqlmap 指令 &nbsp;
+        <span class="badge badge-green">GET</span>&nbsp;
+        <span class="badge badge-green">POST</span>&nbsp;
+        <span class="badge badge-info">JSON</span>&nbsp;
+        <span class="badge badge-warn">Form</span>
+      </p>
+    </div>
+  </header>
+
+  <!-- Step 1: Raw request -->
+  <div class="card">
+    <div class="card-title">01 &nbsp; HTTP Request</div>
+    <div class="field">
+      <label>原始 request（貼入 Burp / DevTools 複製的內容）</label>
+      <textarea id="raw" rows="11" placeholder="POST /api/GetList HTTP/1.1&#10;Host: example.com&#10;Cookie: session=abc123&#10;Content-Type: application/json&#10;&#10;{&quot;id&quot;:&quot;1&quot;,&quot;page&quot;:&quot;1&quot;}"></textarea>
+      <div class="hint">支援 GET / POST；JSON body 或 application/x-www-form-urlencoded 皆可自動識別</div>
+    </div>
+  </div>
+
+  <!-- Step 2: Inject -->
+  <div class="card">
+    <div class="card-title">02 &nbsp; 注入設定</div>
+    <div class="grid2">
+      <div class="field">
+        <label>注入點參數（空白 = 自動全測）</label>
+        <input id="injectParam" placeholder="例：id　或留空" />
+        <div class="hint">POST JSON 會自動在值後加 * 標記</div>
+      </div>
+      <div class="field">
+        <label>資料庫類型</label>
+        <select id="dbms">
+          <option value="">自動偵測</option>
+          <option value="mysql" selected>MySQL</option>
+          <option value="mssql">MSSQL</option>
+          <option value="oracle">Oracle</option>
+          <option value="postgresql">PostgreSQL</option>
+          <option value="sqlite">SQLite</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="field">
+        <label>Level</label>
+        <select id="level">
+          <option value="1">1 — 快速</option>
+          <option value="3">3 — 平衡</option>
+          <option value="5" selected>5 — 完整</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Risk</label>
+        <select id="risk">
+          <option value="1">1 — 安全</option>
+          <option value="2">2 — 中</option>
+          <option value="3" selected>3 — 完整</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Technique</label>
+        <select id="tech">
+          <option value="">全部</option>
+          <option value="B">B — Boolean</option>
+          <option value="E">E — Error</option>
+          <option value="U">U — Union</option>
+          <option value="S">S — Stacked</option>
+          <option value="T">T — Time</option>
+          <option value="BEUST">BEUST — 全部</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Options -->
+  <div class="card">
+    <div class="card-title">03 &nbsp; 進階選項</div>
+    <div class="field">
+      <label>Tamper（繞過 WAF，可多選）</label>
+      <div class="tags" id="tamperTags">
+        <button class="tag" data-val="space2comment">space2comment</button>
+        <button class="tag" data-val="between">between</button>
+        <button class="tag" data-val="randomcase">randomcase</button>
+        <button class="tag" data-val="charencode">charencode</button>
+        <button class="tag" data-val="base64encode">base64encode</button>
+        <button class="tag" data-val="equaltolike">equaltolike</button>
+        <button class="tag" data-val="greatest">greatest</button>
+        <button class="tag" data-val="ifnull2ifisnull">ifnull2ifisnull</button>
+        <button class="tag" data-val="unmagicquotes">unmagicquotes</button>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="field">
+      <label>目標動作（單選）</label>
+      <div class="tags" id="goalTags">
+        <button class="tag active" data-val="">偵測注入點</button>
+        <button class="tag" data-val="--current-db">目前 DB</button>
+        <button class="tag" data-val="--current-user">目前 User</button>
+        <button class="tag" data-val="--dbs">列出所有 DB</button>
+        <button class="tag" data-val="--tables">列出 Tables</button>
+        <button class="tag" data-val="--columns">列出 Columns</button>
+        <button class="tag" data-val="--dump">Dump 資料</button>
+        <button class="tag" data-val="--dump-all">Dump 全部</button>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="grid2">
+      <div class="field">
+        <label>-D 資料庫（選填）</label>
+        <input id="dbName" placeholder="e.g. mydb" />
+      </div>
+      <div class="field">
+        <label>-T 資料表（選填）</label>
+        <input id="tableName" placeholder="e.g. users" />
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>--time-sec（時間盲注 timeout）</label>
+        <input id="timeSec" placeholder="預設 5" />
+      </div>
+      <div class="field">
+        <label>--proxy（選填）</label>
+        <input id="proxy" placeholder="http://127.0.0.1:8080" />
+      </div>
+    </div>
+    <div class="field">
+      <label>其他額外參數</label>
+      <input id="extra" placeholder="例：--flush-session --random-agent" />
+    </div>
+  </div>
+
+  <div id="errMsg" class="error-msg" style="display:none"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="generate()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      產生 sqlmap 指令
+    </button>
+    <button class="btn btn-ghost" onclick="clearAll()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+      清除
+    </button>
+  </div>
+
+  <!-- Output -->
+  <div class="output-card" id="outputCard" style="display:none">
+    <div class="output-header">
+      <div class="output-label"><span class="dot"></span> sqlmap command</div>
+      <button class="copy-btn" onclick="copyOut()" id="copyBtn">複製</button>
+    </div>
+    <div class="output-body" id="output"></div>
+  </div>
+
+</div>
+
+<script>
+const tamperTags = document.querySelectorAll('#tamperTags .tag');
+const goalTags = document.querySelectorAll('#goalTags .tag');
+
+tamperTags.forEach(t => t.addEventListener('click', () => t.classList.toggle('active')));
+goalTags.forEach(t => t.addEventListener('click', () => {
+  goalTags.forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+}));
+
+function parseRaw(raw) {
+  const lines = raw.trim().split(/\r?\n/);
+  const firstLine = lines[0].trim();
+  const m = firstLine.match(/^(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s+HTTP/i);
+  if (!m) return null;
+  const method = m[1].toUpperCase();
+  const path = m[2];
+
+  let host = '', cookie = '', contentType = '', body = '';
+  let bodyStart = -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '') { bodyStart = i + 1; break; }
+    const hm = lines[i].match(/^([^:]+):\s*(.*)$/);
+    if (!hm) continue;
+    const key = hm[1].trim().toLowerCase();
+    const val = hm[2].trim();
+    if (key === 'host') host = val;
+    else if (key === 'cookie') cookie = val;
+    else if (key === 'content-type') contentType = val;
+  }
+  if (bodyStart >= 0) body = lines.slice(bodyStart).join('\n').trim();
+  const url = 'https://' + host + path;
+  return { method, url, host, cookie, contentType, body };
+}
+
+function injectStar(body, param, isJson) {
+  if (!param) return body;
+  if (isJson) {
+    try {
+      const obj = JSON.parse(body);
+      if (obj[param] !== undefined) {
+        obj[param] = String(obj[param]) + '*';
+        return JSON.stringify(obj);
+      }
+    } catch(e) {}
+  }
+  return body.replace(new RegExp('(' + param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=)([^&]*)'), '$1$2*');
+}
+
+function generate() {
+  const err = document.getElementById('errMsg');
+  err.style.display = 'none';
+  const raw = document.getElementById('raw').value.trim();
+  if (!raw) { showErr('請先貼入 HTTP request'); return; }
+  const parsed = parseRaw(raw);
+  if (!parsed) { showErr('無法解析 request，請確認第一行格式正確（例：POST /path HTTP/1.1）'); return; }
+
+  const { method, url, cookie, contentType, body } = parsed;
+  const injectParam = document.getElementById('injectParam').value.trim();
+  const dbms = document.getElementById('dbms').value;
+  const level = document.getElementById('level').value;
+  const risk = document.getElementById('risk').value;
+  const tech = document.getElementById('tech').value;
+  const dbName = document.getElementById('dbName').value.trim();
+  const tableName = document.getElementById('tableName').value.trim();
+  const timeSec = document.getElementById('timeSec').value.trim();
+  const proxy = document.getElementById('proxy').value.trim();
+  const extra = document.getElementById('extra').value.trim();
+
+  const activeTampers = [...document.querySelectorAll('#tamperTags .tag.active')].map(t => t.dataset.val);
+  const goal = document.querySelector('#goalTags .tag.active')?.dataset.val || '';
+  const isJson = contentType && contentType.includes('application/json');
+
+  let parts = ['sqlmap'];
+  parts.push(`-u "${url}"`);
+
+  if (method === 'POST' && body) {
+    const injBody = injectParam ? injectStar(body, injectParam, isJson) : body;
+    parts.push(`--data='${injBody}'`);
+    parts.push('--method=POST');
+  } else if (method === 'GET' && injectParam) {
+    parts.push(`-p ${injectParam}`);
+  }
+
+  if (cookie) parts.push(`--cookie='${cookie}'`);
+  if (isJson) parts.push(`--headers='Content-Type: application/json'`);
+  if (dbms) parts.push(`--dbms=${dbms}`);
+  parts.push(`--level=${level}`);
+  parts.push(`--risk=${risk}`);
+  if (tech) parts.push(`--technique=${tech}`);
+  parts.push('--batch');
+  if (activeTampers.length) parts.push(`--tamper=${activeTampers.join(',')}`);
+  if (timeSec) parts.push(`--time-sec=${timeSec}`);
+  if (proxy) parts.push(`--proxy=${proxy}`);
+  if (dbName) parts.push(`-D ${dbName}`);
+  if (tableName) parts.push(`-T ${tableName}`);
+  if (goal) parts.push(goal);
+  if (extra) parts.push(extra);
+
+  const cmd = parts.join(' \\\n  ');
+  showOutput(cmd);
+}
+
+function showErr(msg) {
+  const err = document.getElementById('errMsg');
+  err.textContent = '⚠ ' + msg;
+  err.style.display = 'block';
+}
+
+function showOutput(cmd) {
+  document.getElementById('outputCard').style.display = 'block';
+  document.getElementById('output').textContent = cmd;
+  document.getElementById('outputCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function copyOut() {
+  const text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => btn.textContent = '複製', 1800);
+  });
+}
+
+function clearAll() {
+  document.getElementById('raw').value = '';
+  document.getElementById('injectParam').value = '';
+  document.getElementById('dbName').value = '';
+  document.getElementById('tableName').value = '';
+  document.getElementById('timeSec').value = '';
+  document.getElementById('proxy').value = '';
+  document.getElementById('extra').value = '';
+  document.getElementById('outputCard').style.display = 'none';
+  document.getElementById('errMsg').style.display = 'none';
+  tamperTags.forEach(t => t.classList.remove('active'));
+  goalTags.forEach((t, i) => i === 0 ? t.classList.add('active') : t.classList.remove('active'));
+}
+</script>
+</body>
+</html>
