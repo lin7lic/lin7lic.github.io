@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<!-- 安全政策：禁止載入任何外部資源；唯一允許的連線是向 Google 抓取「公開」金鑰。token 本身永遠不會被送出。 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https://www.googleapis.com; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JWT 本機檢查器</title>
+<style>
+:root{
+  --bg:#E9EDF2; --surface:#FFFFFF; --ink:#18202C; --muted:#5A6577; --line:#C9D1DC;
+  --hdr:#3949C2; --pld:#0B7A68; --sig:#B0256C;
+  --ok:#1E7A3A; --bad:#B42318; --warn:#8A5A00;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#141A23; --surface:#1C2430; --ink:#E5EAF1; --muted:#97A3B6; --line:#2F3A4A;
+    --hdr:#9AA6FF; --pld:#4FD1B5; --sig:#F07AB5;
+    --ok:#5BD68A; --bad:#FF8A80; --warn:#F2C14E;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 48px}
+header h1{font-size:28px;line-height:1.2;margin:0 0 6px;letter-spacing:.01em}
+header p{margin:0;color:var(--muted);max-width:70ch}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:14px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:currentColor}
+.legend .h{color:var(--hdr)} .legend .p{color:var(--pld)} .legend .s{color:var(--sig)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-top:24px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+section+section{margin-top:20px}
+h2{font-size:17px;margin:0 0 10px}
+label.field{display:block;font-weight:600;margin-bottom:6px}
+textarea{width:100%;min-height:150px;resize:vertical;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13.5px/1.5 var(--mono);word-break:break-all}
+textarea:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--hdr);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+button{font:inherit;font-size:14px;padding:7px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--hdr);border-color:var(--hdr);color:#fff}
+.small{font-size:13.5px;color:var(--muted)}
+.tokenview{margin-top:12px;padding:10px 12px;border-radius:6px;background:var(--bg);font:13.5px/1.55 var(--mono);word-break:break-all;min-height:2.5em}
+.tokenview .h{color:var(--hdr)} .tokenview .p{color:var(--pld)} .tokenview .s{color:var(--sig)} .tokenview .dot{color:var(--muted)}
+.empty{color:var(--muted);font-family:var(--sans)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:13px}
+td.mono{font-family:var(--mono);font-size:13.5px}
+.tag{display:inline-block;font-size:12.5px;padding:1px 8px;border-radius:999px;border:1px solid currentColor}
+.tag.ok{color:var(--ok)} .tag.bad{color:var(--bad)} .tag.warn{color:var(--warn)}
+.stamp{margin-top:14px;border:2px solid var(--line);border-radius:8px;padding:14px 16px}
+.stamp strong{display:block;font-size:22px;line-height:1.3}
+.stamp p{margin:4px 0 0;color:var(--muted);font-size:14.5px}
+.stamp.ok{border-color:var(--ok)} .stamp.ok strong{color:var(--ok)}
+.stamp.bad{border-color:var(--bad)} .stamp.bad strong{color:var(--bad)}
+.stamp.idle strong{color:var(--muted)}
+.notes{margin:10px 0 0;padding-left:1.2em;font-size:14.5px}
+.notes li{margin:3px 0}
+.notes li.bad{color:var(--bad)} .notes li.warn{color:var(--warn)} .notes li.ok{color:var(--ok)}
+footer{margin-top:28px;font-size:13.5px;color:var(--muted);max-width:80ch}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+.json-edit{white-space:pre;overflow-x:auto;word-break:normal;border-left-width:4px}
+#headerIn{border-left-color:var(--hdr);min-height:140px}
+#payloadIn{border-left-color:var(--pld);min-height:320px}
+.msg{font-size:13.5px;margin-top:6px;min-height:1.2em;color:var(--muted)}
+.msg.bad{color:var(--bad)} .msg.ok{color:var(--ok)} .msg.warn{color:var(--warn)}
+details{margin-top:12px;font-size:14.5px}
+details summary{cursor:pointer;color:var(--muted)}
+details textarea{min-height:120px;margin-top:8px}
+select{font:inherit;font-size:14px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+span.mono{font-family:var(--mono);font-size:13.5px}
+.tag{white-space:nowrap}
+td.desc{color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>JWT 本機檢查器</h1>
+    <p>解碼、編輯、簽章與驗證都在這個檔案裡完成，token 和金鑰都不會離開你的電腦。網路只會用在你按下「抓取 Google 公鑰」的時候，而且只下載公開金鑰。</p>
+    <div class="legend"><span class="h">Header</span><span class="p">Payload</span><span class="s">Signature</span></div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <section>
+        <label class="field" for="token">JWT</label>
+        <textarea id="token" spellcheck="false" autocomplete="off" placeholder="貼上 eyJhbGciOi…（也可以貼「Bearer eyJ…」），或直接在右邊編輯 Header 和 Payload 來產生新的 token"></textarea>
+        <div class="tokenview" id="tokenView"><span class="empty">分段後的 token 會顯示在這裡。</span></div>
+        <div class="row"><button id="copyJwtBtn" type="button">複製 JWT</button><button id="clearBtn" type="button">清除全部</button><span class="small" id="parseMsg"></span></div>
+      </section>
+
+      <section>
+        <h2>金鑰與簽章</h2>
+        <label class="field" for="key" id="keyLabel">金鑰</label>
+        <p class="small" style="margin:0 0 8px">公鑰只能驗證：支援 SPKI（BEGIN PUBLIC KEY）、PKCS#1（BEGIN RSA PUBLIC KEY）、X.509 憑證、JWK、JWKS。私鑰可以簽章：支援 PKCS#8、PKCS#1（BEGIN RSA PRIVATE KEY）、SEC1（BEGIN EC PRIVATE KEY）、JWK。</p>
+        <textarea id="key" spellcheck="false" autocomplete="off" placeholder="-----BEGIN PUBLIC KEY----- …、-----BEGIN PRIVATE KEY----- …，或 {&quot;keys&quot;:[…]}"></textarea>
+        <div class="msg" id="keyMsg" role="status"></div>
+        <div class="row">
+          <button id="googleBtn" class="primary" type="button">抓取 Google 公鑰</button>
+          <label class="chk" for="algPick">產生範例
+            <select id="algPick">
+              <option value="">選擇演算法…</option>
+              <option>HS256</option><option>HS384</option><option>HS512</option>
+              <option>RS256</option><option>RS384</option><option>RS512</option>
+              <option>PS256</option><option>PS384</option><option>PS512</option>
+              <option>ES256</option><option>ES384</option><option>ES512</option>
+              <option>EdDSA</option>
+            </select>
+          </label>
+          <label class="chk" id="b64Wrap" hidden><input type="checkbox" id="b64Secret"> 密鑰是 Base64／Base64URL 編碼</label>
+        </div>
+        <div class="msg" id="fetchMsg"></div>
+        <div class="stamp idle" id="stamp" role="status" aria-live="polite">
+          <strong>等待 token</strong>
+          <p>先貼上 JWT，或在右邊編輯 Header 和 Payload。</p>
+        </div>
+        <div class="msg" id="signMsg"></div>
+        <details id="pubWrap" hidden>
+          <summary>對應的公鑰（可以分享給驗證方）</summary>
+          <p class="small" style="margin:8px 0 0">PEM（SPKI）</p>
+          <textarea id="pubOut" readonly spellcheck="false"></textarea>
+          <p class="small" style="margin:8px 0 0">JWK</p>
+          <textarea id="pubJwkOut" readonly spellcheck="false"></textarea>
+          <div class="row"><button id="copyPemBtn" type="button">複製 PEM</button><button id="copyJwkBtn" type="button">複製 JWK</button></div>
+        </details>
+      </section>
+    </div>
+
+    <div>
+      <section>
+        <label class="field" for="headerIn">Header</label>
+        <textarea id="headerIn" class="json-edit" spellcheck="false" autocomplete="off" placeholder='{
+  "alg": "HS256",
+  "typ": "JWT"
+}'></textarea>
+        <div class="msg" id="headerMsg"></div>
+      </section>
+      <section>
+        <label class="field" for="payloadIn">Payload</label>
+        <textarea id="payloadIn" class="json-edit" spellcheck="false" autocomplete="off" placeholder='{
+  "sub": "1234567890",
+  "name": "測試使用者",
+  "iat": 1791250000
+}'></textarea>
+        <div class="msg" id="payloadMsg"></div>
+      </section>
+      <section>
+        <h2>欄位解析</h2>
+        <div id="claimsOut"><p class="small">有 token 後，這裡會逐一說明 Header 和 Payload 的每個欄位，時間欄位會換成本地時間。</p></div>
+        <ul class="notes" id="notes"></ul>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    這個頁面的 Content-Security-Policy（在原始碼最上方）讓瀏覽器拒絕載入任何外部檔案，也拒絕連到 www.googleapis.com 以外的位址，所以 token 和私鑰都送不出去。想要再保險一點，可以先斷網再開啟，然後手動貼上公鑰。頁面不使用 localStorage 或 cookie，關掉分頁就什麼都不留。即使如此，也請只在這裡使用測試用的私鑰，不要貼正式環境的私鑰。
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+const HASH = {"256":"SHA-256","384":"SHA-384","512":"SHA-512"};
+const CURVE = {"256":"P-256","384":"P-384","512":"P-521"};
+const ES_LEN = {"256":64,"384":96,"512":132};
+const GOOGLE_JWKS = "https://www.googleapis.com/oauth2/v3/certs";
+let current = null;      // 目前解析出的 token
+let source = "token";    // 最後一次是從哪裡修改：token 或 json
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+/* ---------- Base64 ---------- */
+function b64urlToBytes(s){
+  if(!/^[A-Za-z0-9_\-]*={0,2}$/.test(s)) throw new Error("含有 Base64URL 以外的字元");
+  s = s.replace(/=+$/,"").replace(/-/g,"+").replace(/_/g,"/");
+  if(s.length % 4 === 1) throw new Error("Base64URL 長度不正確");
+  while(s.length % 4) s += "=";
+  const bin = atob(s); const out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function b64ToBytes(s){
+  const bin = atob(s.replace(/\s+/g,"").replace(/-/g,"+").replace(/_/g,"/")); const out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function bytesToB64(bytes){ let s=""; for(const b of bytes) s += String.fromCharCode(b); return btoa(s); }
+function bytesToB64url(bytes){ return bytesToB64(bytes).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+function toPem(bytes, label){
+  const b = bytesToB64(new Uint8Array(bytes)).match(/.{1,64}/g).join("\n");
+  return `-----BEGIN ${label}-----\n${b}\n-----END ${label}-----`;
+}
+
+/* ---------- DER／PEM 格式轉換 ---------- */
+function concatBytes(...arrs){ let n=0; for(const a of arrs) n+=a.length; const out=new Uint8Array(n); let o=0; for(const a of arrs){ out.set(a,o); o+=a.length; } return out; }
+function derLen(n){ if(n<128) return Uint8Array.of(n); const b=[]; while(n>0){ b.unshift(n&255); n=Math.floor(n/256); } return Uint8Array.of(0x80|b.length, ...b); }
+function der(tag, content){ return concatBytes(Uint8Array.of(tag), derLen(content.length), content); }
+function readTLV(buf, pos){
+  if(pos+2 > buf.length) throw new Error("DER 資料不完整");
+  const tag = buf[pos]; let len = buf[pos+1], off = pos+2;
+  if(len & 0x80){ const n = len & 0x7f; if(n<1||n>4) throw new Error("DER 長度格式不支援"); len=0; for(let i=0;i<n;i++) len = len*256 + buf[off+i]; off += n; }
+  if(off+len > buf.length) throw new Error("DER 資料長度超出範圍");
+  return {tag, hdr:pos, start:off, end:off+len};
+}
+function derChildren(buf, tlv){ const out=[]; let p=tlv.start; while(p<tlv.end){ const c=readTLV(buf,p); out.push(c); p=c.end; } return out; }
+const OID_RSA = Uint8Array.from([0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x01]);
+const OID_EC  = Uint8Array.from([0x06,0x07,0x2A,0x86,0x48,0xCE,0x3D,0x02,0x01]);
+const OID_CURVE = {
+  "P-256": Uint8Array.from([0x06,0x08,0x2A,0x86,0x48,0xCE,0x3D,0x03,0x01,0x07]),
+  "P-384": Uint8Array.from([0x06,0x05,0x2B,0x81,0x04,0x00,0x22]),
+  "P-521": Uint8Array.from([0x06,0x05,0x2B,0x81,0x04,0x00,0x23])
+};
+const RSA_ALGID = der(0x30, concatBytes(OID_RSA, Uint8Array.of(0x05,0x00)));
+// PKCS#1 RSA 公鑰 → SPKI
+function pkcs1PubToSpki(d){ return der(0x30, concatBytes(RSA_ALGID, der(0x03, concatBytes(Uint8Array.of(0), d)))); }
+// PKCS#1 RSA 私鑰 → PKCS#8
+function pkcs1PrivToPkcs8(d){ return der(0x30, concatBytes(Uint8Array.of(0x02,0x01,0x00), RSA_ALGID, der(0x04, d))); }
+// SEC1 EC 私鑰 → PKCS#8
+function sec1ToPkcs8(d, fallbackCurve){
+  const top = readTLV(d,0); const kids = derChildren(d, top);
+  let curveOid = null;
+  const p0 = kids.find(k => k.tag === 0xA0);
+  if(p0){ const inner = readTLV(d, p0.start); curveOid = d.slice(inner.hdr, inner.end); }
+  if(!curveOid){
+    if(!fallbackCurve) throw new Error("SEC1 私鑰沒有標示曲線，也無法從演算法推得");
+    curveOid = OID_CURVE[fallbackCurve];
+  }
+  const algId = der(0x30, concatBytes(OID_EC, curveOid));
+  return der(0x30, concatBytes(Uint8Array.of(0x02,0x01,0x00), algId, der(0x04, d)));
+}
+// X.509 憑證 → 取出其中的 SPKI
+function certToSpki(d){
+  const cert = readTLV(d,0);
+  const tbs = derChildren(d, cert)[0];
+  const f = derChildren(d, tbs);
+  const i = f[0].tag === 0xA0 ? 1 : 0;   // version 欄位可省略
+  const spki = f[i+5];
+  if(!spki || spki.tag !== 0x30) throw new Error("無法從憑證中找到公鑰");
+  return d.slice(spki.hdr, spki.end);
+}
+function readPem(text){
+  const re = /-----BEGIN ([A-Z0-9 ]+)-----([\s\S]*?)-----END \1-----/g;
+  let m;
+  while((m = re.exec(text))){ if(m[1] !== "EC PARAMETERS") return {label:m[1], der:b64ToBytes(m[2])}; }
+  throw new Error("找不到完整的 -----BEGIN …----- / -----END …----- 區塊");
+}
+
+/* ---------- 解析 ---------- */
+function parseJwt(raw){
+  const t = raw.trim().replace(/^Bearer\s+/i,"").replace(/\s+/g,"");
+  const parts = t.split(".");
+  if(parts.length === 5) throw new Error("這是 5 段的 JWE（加密 token），需要私鑰才能解密，本工具只處理 3 段的 JWS。");
+  if(parts.length !== 3) throw new Error(`JWT 應該有 3 段，用「.」分隔；目前是 ${parts.length} 段。`);
+  const [h,p,s] = parts;
+  let header, payload;
+  try{ header = JSON.parse(dec.decode(b64urlToBytes(h))); }catch(e){ throw new Error("Header 無法解碼成 JSON：" + e.message); }
+  try{ payload = JSON.parse(dec.decode(b64urlToBytes(p))); }catch(e){ throw new Error("Payload 無法解碼成 JSON：" + e.message); }
+  let sig;
+  try{ sig = b64urlToBytes(s); }catch(e){ throw new Error("Signature 無法解碼：" + e.message); }
+  return {h,p,s,header,payload,sig};
+}
+
+/* ---------- 顯示 ---------- */
+function rel(sec){
+  const d = sec - Date.now()/1000, a = Math.abs(d);
+  let txt;
+  if(a < 60) txt = `${Math.round(a)} 秒`;
+  else if(a < 3600) txt = `${Math.round(a/60)} 分鐘`;
+  else if(a < 86400) txt = `${(a/3600).toFixed(1)} 小時`;
+  else txt = `${(a/86400).toFixed(1)} 天`;
+  return d >= 0 ? `${txt}後` : `${txt}前`;
+}
+function fmt(sec){
+  return new Date(sec*1000).toLocaleString("zh-TW",{hour12:false,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+
+const HEADER_DESC = {
+  alg:"簽章演算法", typ:"token 型別", kid:"金鑰 ID，用來在 JWKS 裡挑出驗證用的公鑰", cty:"內容型別（巢狀 JWT 時使用）",
+  jku:"JWKS 網址（不應直接信任 token 自己指定的金鑰來源）", jwk:"內嵌的公鑰（不應直接信任）", x5u:"X.509 憑證網址", x5c:"X.509 憑證鏈",
+  x5t:"X.509 憑證 SHA-1 指紋", "x5t#S256":"X.509 憑證 SHA-256 指紋", crit:"驗證方必須理解的擴充欄位", b64:"payload 是否經 Base64URL 編碼（RFC 7797）"
+};
+const PAYLOAD_DESC = {
+  iss:"簽發者", sub:"主體（使用者 ID）", aud:"受眾，通常是你的 client ID", exp:"到期時間", nbf:"生效時間", iat:"簽發時間", jti:"token 唯一 ID，可用來防重放",
+  azp:"授權方（拿到這個 token 的 client）", nonce:"登入請求帶的隨機值，用來防重放", auth_time:"使用者實際登入的時間",
+  at_hash:"access token 的雜湊", c_hash:"authorization code 的雜湊", acr:"驗證強度等級", amr:"驗證方式（例如 pwd、otp）", sid:"登入工作階段 ID",
+  scope:"授權範圍", scp:"授權範圍", client_id:"client ID", email:"Email", email_verified:"Email 是否已驗證", name:"全名",
+  given_name:"名", family_name:"姓", middle_name:"中間名", nickname:"暱稱", preferred_username:"偏好的帳號名稱", picture:"大頭貼網址",
+  locale:"語系", zoneinfo:"時區", phone_number:"電話", phone_number_verified:"電話是否已驗證", address:"地址", birthdate:"生日", gender:"性別",
+  updated_at:"資料更新時間", hd:"Google Workspace 網域", roles:"角色", groups:"群組", tid:"租戶 ID", oid:"物件 ID", upn:"使用者主體名稱"
+};
+const DATE_CLAIMS = new Set(["exp","nbf","iat","auth_time","updated_at"]);
+
+function claimRows(obj, descMap, isPayload){
+  const now = Date.now()/1000;
+  return Object.entries(obj).map(([k,v])=>{
+    let val, st = "";
+    if(DATE_CLAIMS.has(k) && typeof v === "number"){
+      val = `<span class="mono">${esc(v)}</span><br>${fmt(v)}<br><span class="small">${rel(v)}</span>`;
+      if(isPayload && k === "exp") st = v <= now ? '<span class="tag bad">已過期</span>' : '<span class="tag ok">有效期內</span>';
+      if(isPayload && k === "nbf") st = v > now ? '<span class="tag bad">尚未生效</span>' : '<span class="tag ok">已生效</span>';
+      if(isPayload && k === "iat" && v > now + 60) st = '<span class="tag warn">在未來</span>';
+    }else{
+      const txt = typeof v === "string" ? v : JSON.stringify(v);
+      val = `<span class="mono" style="word-break:break-all">${esc(txt)}</span>`;
+    }
+    if(!isPayload && k === "alg" && v === "none") st = '<span class="tag bad">無簽章</span>';
+    if(!isPayload && (k === "jku" || k === "jwk" || k === "x5u")) st = '<span class="tag warn">小心</span>';
+    const desc = descMap[k] || "自訂欄位";
+    return `<tr><td class="mono">${esc(k)}</td><td>${val}<div class="desc small">${esc(desc)}</div></td><td>${st}</td></tr>`;
+  }).join("");
+}
+
+function renderClaims(hd, pl){
+  const table = (title, rows) => rows
+    ? `<p class="small" style="margin:12px 0 4px"><strong>${title}</strong></p><table><thead><tr><th style="width:9em">欄位</th><th>值與說明</th><th style="width:6.5em">狀態</th></tr></thead><tbody>${rows}</tbody></table>`
+    : "";
+  $("#claimsOut").innerHTML = table("Header", claimRows(hd, HEADER_DESC, false)) + table("Payload", claimRows(pl, PAYLOAD_DESC, true));
+}
+
+function renderNotes(hd,pl){
+  const n = [];
+  const now = Date.now()/1000;
+  if(hd.alg === "none") n.push(["bad","alg 是 none：這個 token 沒有簽章，任何人都能偽造，伺服器絕對不能接受。"]);
+  if(typeof pl.exp !== "number") n.push(["warn","沒有 exp：這個 token 不會自動失效。"]);
+  else if(pl.exp <= now) n.push(["bad","token 已過期，伺服器應該拒絕。"]);
+  const isGoogle = pl.iss === "https://accounts.google.com" || pl.iss === "accounts.google.com";
+  if(isGoogle){
+    n.push(["ok","iss 是 Google；可以按「抓取 Google 公鑰」驗證。"]);
+    n.push(["warn","後端還必須確認 aud 等於你自己的 client ID，否則別的網站簽發給使用者的 token 也能拿來登入你的服務。"]);
+    if(pl.email && pl.email_verified !== true) n.push(["warn","email_verified 不是 true，不要信任這個 Email。"]);
+  }
+  if(typeof hd.alg === "string" && hd.alg.startsWith("HS")) n.push(["warn","HS 演算法用共用密鑰；簽發方和驗證方持有同一把密鑰。"]);
+  if(hd.jku || hd.jwk || hd.x5u) n.push(["warn","Header 自己指定了金鑰來源（jku／jwk／x5u）。伺服器應該只用事先設定好的金鑰驗證，否則攻擊者可以附上自己的金鑰來偽造 token。"]);
+  $("#notes").innerHTML = n.map(([c,t])=>`<li class="${c}">${esc(t)}</li>`).join("");
+}
+
+function setStamp(r){
+  const el = $("#stamp");
+  el.className = "stamp " + r.state;
+  el.innerHTML = `<strong>${r.title}</strong><p>${r.detail}</p>`;
+}
+function setMsg(id, text, cls){ const el = $(id); el.textContent = text || ""; el.className = "msg" + (cls ? " " + cls : ""); }
+
+/* ---------- 演算法與金鑰 ---------- */
+function algSpec(alg){
+  if(typeof alg !== "string" || !alg) throw new Error("Header 沒有 alg");
+  if(alg === "EdDSA") return {fam:"Ed", imp:{name:"Ed25519"}, params:{name:"Ed25519"}};
+  const fam = alg.slice(0,2), bits = alg.slice(2);
+  if(!HASH[bits] || !["HS","RS","PS","ES"].includes(fam)) throw new Error(`不支援的演算法 ${alg}（支援 HS／RS／PS／ES 256、384、512 與 EdDSA）`);
+  if(fam === "HS") return {fam,bits,imp:{name:"HMAC",hash:HASH[bits]},params:{name:"HMAC"}};
+  if(fam === "RS") return {fam,bits,imp:{name:"RSASSA-PKCS1-v1_5",hash:HASH[bits]},params:{name:"RSASSA-PKCS1-v1_5"}};
+  if(fam === "PS") return {fam,bits,imp:{name:"RSA-PSS",hash:HASH[bits]},params:{name:"RSA-PSS",saltLength:parseInt(bits,10)/8}};
+  return {fam,bits,imp:{name:"ECDSA",namedCurve:CURVE[bits]},params:{name:"ECDSA",hash:HASH[bits]}};
+}
+
+function checkKty(j, fam){
+  const need = (fam === "RS" || fam === "PS") ? "RSA" : fam === "ES" ? "EC" : "OKP";
+  if(j.kty !== need) throw new Error(`這個演算法需要 ${need} 金鑰，但 JWK 的 kty 是 ${j.kty}`);
+}
+function publicJwk(j, fam){
+  checkKty(j, fam);
+  if(j.kty === "RSA") return {kty:"RSA", n:j.n, e:j.e};
+  if(j.kty === "EC") return {kty:"EC", crv:j.crv, x:j.x, y:j.y};
+  return {kty:"OKP", crv:j.crv, x:j.x};
+}
+function privateJwk(j, fam){
+  checkKty(j, fam);
+  if(j.kty === "RSA") return {kty:"RSA", n:j.n, e:j.e, d:j.d, p:j.p, q:j.q, dp:j.dp, dq:j.dq, qi:j.qi};
+  if(j.kty === "EC") return {kty:"EC", crv:j.crv, x:j.x, y:j.y, d:j.d};
+  return {kty:"OKP", crv:j.crv, x:j.x, d:j.d};
+}
+
+// 回傳 {verify, sign|null, note, pubPem|null}；金鑰欄空白時回傳 null
+async function loadKeys(text, header, spec){
+  if(!text.trim()) return null;
+  const S = crypto.subtle;
+  if(spec.fam === "HS"){
+    const b64 = $("#b64Secret").checked;
+    let raw;
+    try{ raw = hsSecretBytes(text, b64); }catch(e){ throw new Error("勾選了 Base64 編碼，但這個密鑰不是有效的 Base64／Base64URL 字串。"); }
+    const k = await S.importKey("raw", raw, spec.imp, false, ["sign","verify"]);
+    const need = parseInt(spec.bits,10)/8;
+    const warn = raw.length < need ? `密鑰只有 ${raw.length} bytes，${header.alg} 依規範（RFC 7518）至少要 ${need} bytes，太短容易被暴力破解。` : "";
+    return {verify:k, sign:k, note: b64 ? "密鑰以 Base64 解碼後使用" : "密鑰以 UTF-8 文字使用", pubPem:null, pubJwk:null, warn, bytes:raw.length};
+  }
+  const t = text.trim();
+  const fromPublicJwk = async (jwk, note) => {
+    const pub = await S.importKey("jwk", publicJwk(jwk, spec.fam), spec.imp, true, ["verify"]);
+    return {pub, note};
+  };
+  let pub, sign = null, note;
+  if(t.startsWith("{") || t.startsWith("[")){
+    let obj;
+    try{ obj = JSON.parse(t); }catch(e){ throw new Error("金鑰看起來是 JSON，但格式不正確：" + e.message); }
+    if(Array.isArray(obj)) obj = {keys:obj};
+    let jwk;
+    if(Array.isArray(obj.keys)){
+      if(obj.keys.length === 0) throw new Error("JWKS 裡沒有任何金鑰");
+      const kid = header.kid;
+      if(kid){
+        jwk = obj.keys.find(x => x.kid === kid);
+        if(!jwk){
+          const list = obj.keys.map(x=>x.kid).filter(Boolean).join("、") || "（無）";
+          throw new Error(`JWKS 裡找不到 kid「${kid}」。目前有的 kid：${list}。可能是金鑰已經輪替，這個 token 已無法用現行公鑰驗證。`);
+        }
+        note = `使用 JWKS 中 kid = ${kid} 的金鑰`;
+      }else if(obj.keys.length === 1){ jwk = obj.keys[0]; note = "header 沒有 kid，使用 JWKS 中唯一的金鑰"; }
+      else throw new Error("header 沒有 kid，而 JWKS 有多把金鑰，無法判斷要用哪一把；請只貼上其中一把 JWK。");
+    }else if(obj.kty){ jwk = obj; note = "使用貼上的 JWK"; }
+    else throw new Error("JSON 裡沒有 keys 陣列，也沒有 kty 欄位，不是 JWK／JWKS。");
+    if(jwk.d){
+      sign = await S.importKey("jwk", privateJwk(jwk, spec.fam), spec.imp, false, ["sign"]);
+      note = note.replace("金鑰","私鑰");
+    }
+    ({pub} = await fromPublicJwk(jwk, note));
+  }else if(t.includes("-----BEGIN")){
+    const {label, der:d} = readPem(t);
+    const importPriv = async (pkcs8, desc) => {
+      const priv = await S.importKey("pkcs8", pkcs8, spec.imp, true, ["sign"]);
+      const jwk = await S.exportKey("jwk", priv);
+      sign = priv;
+      ({pub} = await fromPublicJwk(jwk));
+      note = `使用貼上的 ${desc} 私鑰`;
+    };
+    const wrap = async (fn) => { try{ return await fn(); }catch(e){ throw new Error(`${label} 無法用於 ${header.alg}（${e.message || e}）。可能是金鑰內容複製不完整，或金鑰類型和演算法不一致：RS／PS 要用 RSA，ES256／384／512 要用 P-256／384／521，EdDSA 要用 Ed25519。`); } };
+    if(label === "ENCRYPTED PRIVATE KEY") throw new Error("這是加密過的私鑰，請先用 openssl pkcs8 -in key.pem -out plain.pem 解密。");
+    else if(label === "PRIVATE KEY") await wrap(() => importPriv(d, "PKCS#8"));
+    else if(label === "RSA PRIVATE KEY") await wrap(() => importPriv(pkcs1PrivToPkcs8(d), "PKCS#1"));
+    else if(label === "EC PRIVATE KEY") await wrap(() => importPriv(sec1ToPkcs8(d, spec.imp.namedCurve), "SEC1"));
+    else{
+      let spki, desc;
+      if(label === "PUBLIC KEY"){ spki = d; desc = "SPKI 公鑰"; }
+      else if(label === "RSA PUBLIC KEY"){ spki = pkcs1PubToSpki(d); desc = "PKCS#1 公鑰"; }
+      else if(label === "CERTIFICATE"){ spki = certToSpki(d); desc = "X.509 憑證中的公鑰"; }
+      else throw new Error(`不認得的 PEM 類型「${label}」`);
+      pub = await wrap(() => S.importKey("spki", spki, spec.imp, true, ["verify"]));
+      note = `使用貼上的 ${desc}`;
+    }
+  }else{
+    throw new Error("看不出金鑰格式。請貼上 PEM、JWK 或 JWKS。");
+  }
+  let pubPem = null, pubJwk = null;
+  try{ pubPem = toPem(await S.exportKey("spki", pub), "PUBLIC KEY"); }catch(e){}
+  try{
+    const j = await S.exportKey("jwk", pub);
+    delete j.key_ops; delete j.ext;
+    pubJwk = {...j, use:"sig", alg:header.alg, ...(header.kid ? {kid:header.kid} : {})};
+  }catch(e){}
+  return {verify:pub, sign, note, pubPem, pubJwk, warn:""};
+}
+
+/* ---------- HS 密鑰 ---------- */
+function hsSecretBytes(text, b64){
+  return b64 ? b64ToBytes(text.trim()) : enc.encode(text.replace(/\r?\n$/,""));
+}
+// HS 驗證失敗時，試試其他常見的解讀方式，找得到就提示使用者
+async function hsHint(parsed, text, spec){
+  const b64 = $("#b64Secret").checked;
+  const data = enc.encode(parsed.h + "." + parsed.p);
+  const tryRaw = async raw => {
+    try{
+      const k = await crypto.subtle.importKey("raw", raw, spec.imp, false, ["verify"]);
+      return await crypto.subtle.verify(spec.params, k, parsed.sig, data);
+    }catch(e){ return false; }
+  };
+  let alt = null;
+  try{ alt = hsSecretBytes(text, !b64); }catch(e){}
+  if(alt && await tryRaw(alt))
+    return b64 ? "提示：取消勾選「密鑰是 Base64／Base64URL 編碼」就會通過，這個 secret 應該當成一般文字使用。"
+               : "提示：勾選「密鑰是 Base64／Base64URL 編碼」就會通過，這個 secret 是 Base64 字串。";
+  const trimmed = text.trim();
+  if(trimmed !== text.replace(/\r?\n$/,"")){
+    for(const mode of [b64, !b64]){
+      let r = null; try{ r = hsSecretBytes(trimmed, mode); }catch(e){}
+      if(r && await tryRaw(r))
+        return "提示：密鑰前後有多餘的空白或換行，刪掉後就會通過" + (mode !== b64 ? (mode ? "（同時要勾選 Base64 編碼）" : "（同時要取消勾選 Base64 編碼）") : "") + "。";
+    }
+  }
+  return "";
+}
+
+/* ---------- 金鑰狀態列（對應 jwt.io 的 Valid secret／Valid public key） ---------- */
+function keySizeDesc(j){
+  if(!j) return "";
+  if(j.kty === "RSA"){ try{ return `RSA ${b64urlToBytes(j.n).length*8} bits`; }catch(e){ return "RSA"; } }
+  if(j.kty === "EC") return `EC ${j.crv}`;
+  if(j.kty === "OKP") return j.crv;
+  return j.kty;
+}
+let keyStatusId = 0;
+async function updateKeyStatus(header){
+  const id = ++keyStatusId;
+  const alg = header && header.alg;
+  const text = $("#key").value;
+  const isHS = typeof alg === "string" && alg.startsWith("HS");
+  if(!text.trim()){ setMsg("#keyMsg", isHS ? "尚未輸入密鑰。" : "尚未輸入金鑰。"); return; }
+  if(!alg || alg === "none"){ setMsg("#keyMsg", "token 沒有可用的 alg，無法檢查金鑰。", "warn"); return; }
+  let spec;
+  try{ spec = algSpec(alg); }catch(e){ setMsg("#keyMsg", "✗ " + e.message, "bad"); return; }
+  try{
+    const k = await loadKeys(text, header, spec);
+    if(id !== keyStatusId) return;
+    if(spec.fam === "HS"){
+      if(k.warn) setMsg("#keyMsg", `⚠ 密鑰可以使用，但太短：${k.warn}`, "warn");
+      else setMsg("#keyMsg", `✓ 有效的密鑰（${k.bytes} bytes），可簽章也可驗證`, "ok");
+    }else{
+      const size = keySizeDesc(k.pubJwk);
+      setMsg("#keyMsg", k.sign
+        ? `✓ 有效的私鑰（${size}），可簽章也可驗證`
+        : `✓ 有效的公鑰（${size}），只能驗證`, "ok");
+    }
+  }catch(e){
+    if(id !== keyStatusId) return;
+    setMsg("#keyMsg", "✗ " + (e.message || e), "bad");
+  }
+}
+
+function showPub(keys){
+  const pem = keys && keys.pubPem;
+  $("#pubWrap").hidden = !pem;
+  $("#pubOut").value = pem || "";
+  $("#pubJwkOut").value = keys && keys.pubJwk ? JSON.stringify(keys.pubJwk, null, 2) : "";
+}
+
+/* ---------- 驗證 ---------- */
+async function verify(parsed, keyText){
+  const alg = parsed.header.alg;
+  if(!crypto || !crypto.subtle) return {state:"bad", title:"瀏覽器不支援 Web Crypto", detail:"請用新版 Chrome、Edge、Firefox 或 Safari 直接開啟這個檔案。"};
+  if(alg === "none") return {state:"bad", title:"沒有簽章（alg: none）", detail:"這種 token 任何人都能偽造，不應被接受。"};
+  let spec;
+  try{ spec = algSpec(alg); }catch(e){ return {state:"bad", title:"無法驗證", detail:esc(e.message)}; }
+  let keys;
+  try{ keys = await loadKeys(keyText, parsed.header, spec); }
+  catch(e){ showPub(null); return {state:"bad", title:"金鑰無法使用", detail: esc(e.message || String(e))}; }
+  showPub(keys);
+  if(!keys) return {state:"idle", title:"等待金鑰", detail: spec.fam === "HS" ? "這個 token 用共用密鑰簽章，請貼上 secret。" : "貼上公鑰（PEM、JWK 或 JWKS），或按「抓取 Google 公鑰」。"};
+  if(spec.fam === "ES" && parsed.sig.length !== ES_LEN[spec.bits])
+    return {state:"bad", title:"簽章長度不符", detail:`${esc(alg)} 的簽章應為 ${ES_LEN[spec.bits]} bytes（r‖s 格式），實際是 ${parsed.sig.length} bytes。`};
+  let ok;
+  try{ ok = await crypto.subtle.verify(spec.params, keys.verify, parsed.sig, enc.encode(parsed.h + "." + parsed.p)); }
+  catch(e){ return {state:"bad", title:"驗證過程出錯", detail: esc(e.message || String(e))}; }
+  return ok
+    ? {state:"ok", title:"簽章有效", detail:`${esc(keys.note)}。簽章正確只代表內容沒被竄改；是否過期、aud 是否正確，請看右邊的檢查結果。${keys.warn ? "<br><strong style=\"display:inline;font-size:inherit;color:var(--warn)\">注意：</strong>" + esc(keys.warn) : ""}`}
+    : {state:"bad", title:"簽章無效", detail:`${esc(keys.note)}。可能是金鑰不對、token 被改過，或複製時漏了字元。${spec.fam === "HS" ? " " + await hsHint(parsed, keyText, spec) : ""}`};
+}
+
+/* ---------- 主流程 ---------- */
+function resetView(){
+  $("#tokenView").innerHTML = '<span class="empty">分段後的 token 會顯示在這裡。</span>';
+  $("#claimsOut").innerHTML = '<p class="small">有 token 後，這裡會逐一說明 Header 和 Payload 的每個欄位，時間欄位會換成本地時間。</p>';
+  $("#notes").innerHTML = "";
+  showPub(null);
+}
+
+let runId = 0;
+// fromJson = true 時不覆寫右邊正在編輯的 Header／Payload
+async function analyze(fromJson){
+  const id = ++runId;
+  const raw = $("#token").value;
+  $("#parseMsg").textContent = "";
+  if(!raw.trim()){
+    current = null; resetView(); keyStatusId++; setMsg("#keyMsg");
+    if(!fromJson){ $("#headerIn").value = ""; $("#payloadIn").value = ""; setMsg("#headerMsg"); setMsg("#payloadMsg"); setMsg("#signMsg"); }
+    setStamp({state:"idle", title:"等待 token", detail:"先貼上 JWT，或在右邊編輯 Header 和 Payload。"});
+    return;
+  }
+  try{
+    current = parseJwt(raw);
+  }catch(e){
+    current = null; resetView(); keyStatusId++; setMsg("#keyMsg");
+    setStamp({state:"bad", title:"無法解碼", detail: esc(e.message)});
+    return;
+  }
+  const c = current;
+  if(!fromJson){
+    $("#headerIn").value = JSON.stringify(c.header, null, 2);
+    $("#payloadIn").value = JSON.stringify(c.payload, null, 2);
+    setMsg("#headerMsg"); setMsg("#payloadMsg"); setMsg("#signMsg");
+  }
+  $("#tokenView").innerHTML = `<span class="h">${esc(c.h)}</span><span class="dot">.</span><span class="p">${esc(c.p)}</span><span class="dot">.</span><span class="s">${esc(c.s)}</span>`;
+  $("#parseMsg").textContent = `演算法 ${c.header.alg ?? "未指定"}${c.header.kid ? "，kid " + c.header.kid : ""}`;
+  renderClaims(c.header, c.payload);
+  renderNotes(c.header, c.payload);
+  const isHS = typeof c.header.alg === "string" && c.header.alg.startsWith("HS");
+  $("#keyLabel").textContent = isHS ? "共用密鑰（secret）" : "金鑰";
+  $("#b64Wrap").hidden = !isHS;
+  updateKeyStatus(c.header);
+  const r = await verify(c, $("#key").value);
+  if(id === runId) setStamp(r);
+}
+
+function readJson(sel, msgSel, name){
+  const txt = $(sel).value;
+  if(!txt.trim()){ setMsg(msgSel, `${name} 是空的。`, "bad"); return null; }
+  try{
+    const v = JSON.parse(txt);
+    if(v === null || typeof v !== "object" || Array.isArray(v)){ setMsg(msgSel, `${name} 必須是 JSON 物件 { … }。`, "bad"); return null; }
+    setMsg(msgSel); return v;
+  }catch(e){ setMsg(msgSel, `${name} 不是有效的 JSON：${e.message}`, "bad"); return null; }
+}
+
+let buildId = 0;
+// 從右邊的 Header／Payload 重新組出 token，能簽就重新簽
+async function rebuildFromJson(){
+  const id = ++buildId;
+  const header = readJson("#headerIn", "#headerMsg", "Header");
+  const payload = readJson("#payloadIn", "#payloadMsg", "Payload");
+  if(!header || !payload){ setMsg("#signMsg", "JSON 修正之前，JWT 不會更新。", "warn"); return; }
+  const h = bytesToB64url(enc.encode(JSON.stringify(header)));
+  const p = bytesToB64url(enc.encode(JSON.stringify(payload)));
+  const oldSig = current ? current.s : "";
+  let s = oldSig, msg, cls;
+  if(header.alg === "none"){
+    s = ""; msg = "alg 是 none，簽章欄位留空。"; cls = "warn";
+  }else{
+    try{
+      const spec = algSpec(header.alg);
+      const keys = await loadKeys($("#key").value, header, spec);
+      if(keys && keys.sign){
+        const sig = await crypto.subtle.sign(spec.params, keys.sign, enc.encode(h + "." + p));
+        s = bytesToB64url(new Uint8Array(sig));
+        msg = "已用你提供的金鑰重新簽章。"; cls = "ok";
+      }else{
+        msg = keys ? "金鑰欄只有公鑰，無法重新簽章；保留舊簽章，所以驗證會失敗。要重新簽章請貼上私鑰。"
+                   : "金鑰欄是空的，無法簽章；保留舊簽章。要重新簽章請貼上私鑰或密鑰。";
+        cls = "warn";
+      }
+    }catch(e){
+      msg = "無法重新簽章：" + (e.message || e) + "（保留舊簽章）"; cls = "bad";
+    }
+  }
+  if(id !== buildId) return;
+  $("#token").value = `${h}.${p}.${s}`;
+  await analyze(true);
+  if(id === buildId) setMsg("#signMsg", msg, cls);
+}
+
+/* ---------- 產生測試金鑰 ---------- */
+// 依選定的演算法產生範例：更新 header 的 alg、產生新金鑰、必要時填入範例 payload，然後簽章
+async function generateKey(alg){
+  let spec;
+  try{ spec = algSpec(alg); }catch(e){ setMsg("#fetchMsg", e.message, "bad"); return; }
+  const S = crypto.subtle;
+  try{
+    if(spec.fam === "HS"){
+      const raw = crypto.getRandomValues(new Uint8Array(parseInt(spec.bits,10)/8));
+      $("#key").value = bytesToB64url(raw);
+      $("#b64Secret").checked = true;
+      setMsg("#fetchMsg", `已產生 ${alg} 用的隨機密鑰（${raw.length} bytes，Base64URL）。`, "ok");
+    }else{
+      let gen;
+      if(spec.fam === "RS" || spec.fam === "PS") gen = {...spec.imp, modulusLength:2048, publicExponent:new Uint8Array([1,0,1])};
+      else gen = spec.imp;
+      const pair = await S.generateKey(gen, true, ["sign","verify"]);
+      $("#key").value = toPem(await S.exportKey("pkcs8", pair.privateKey), "PRIVATE KEY");
+      setMsg("#fetchMsg", `已產生 ${alg} 測試私鑰；對應的公鑰（PEM 和 JWK）在下方可以展開複製。`, "ok");
+    }
+  }catch(e){ setMsg("#fetchMsg", `產生 ${alg} 金鑰失敗：${e.message || e}（較舊的瀏覽器可能不支援 Ed25519）`, "bad"); return; }
+  let header = null;
+  try{ header = JSON.parse($("#headerIn").value); }catch(e){}
+  if(!header || typeof header !== "object" || Array.isArray(header)) header = {typ:"JWT"};
+  delete header.kid;   // 換了新金鑰，舊的 kid 不再適用
+  header = {alg, ...header, alg};
+  $("#headerIn").value = JSON.stringify(header, null, 2);
+  if(!$("#payloadIn").value.trim()){
+    const now = Math.floor(Date.now()/1000);
+    $("#payloadIn").value = JSON.stringify({sub:"1234567890", name:"測試使用者", admin:true, iat:now, exp:now+3600}, null, 2);
+  }
+  source = "json";
+  await rebuildFromJson();
+}
+
+async function copyText(text, label){
+  if(!text){ setMsg("#fetchMsg", `沒有可以複製的${label}。`, "warn"); return; }
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+  }
+  setMsg("#fetchMsg", `已複製${label}。`, "ok");
+}
+
+/* ---------- 事件 ---------- */
+let timer;
+function schedule(fn){ clearTimeout(timer); timer = setTimeout(fn, 150); }
+const onKeyChange = () => schedule(() => source === "json" ? rebuildFromJson() : analyze(false));
+
+$("#token").addEventListener("input", () => { source = "token"; schedule(() => analyze(false)); });
+$("#headerIn").addEventListener("input", () => { source = "json"; schedule(rebuildFromJson); });
+$("#payloadIn").addEventListener("input", () => { source = "json"; schedule(rebuildFromJson); });
+$("#key").addEventListener("input", onKeyChange);
+$("#b64Secret").addEventListener("change", onKeyChange);
+$("#algPick").addEventListener("change", e => { const v = e.target.value; e.target.value = ""; if(v) generateKey(v); });
+$("#copyJwtBtn").addEventListener("click", () => copyText($("#token").value.trim(), " JWT"));
+$("#copyPemBtn").addEventListener("click", () => copyText($("#pubOut").value, "公鑰 PEM"));
+$("#copyJwkBtn").addEventListener("click", () => copyText($("#pubJwkOut").value, "公鑰 JWK"));
+$("#clearBtn").addEventListener("click", ()=>{
+  for(const s of ["#token","#key","#headerIn","#payloadIn"]) $(s).value = "";
+  $("#b64Secret").checked = false;
+  setMsg("#fetchMsg"); source = "token"; analyze(false); $("#token").focus();
+});
+
+$("#googleBtn").addEventListener("click", async ()=>{
+  setMsg("#fetchMsg", "正在下載 Google 公鑰…");
+  try{
+    const res = await fetch(GOOGLE_JWKS, {credentials:"omit", referrerPolicy:"no-referrer", cache:"no-store"});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const jwks = await res.json();
+    $("#key").value = JSON.stringify(jwks, null, 2);
+    setMsg("#fetchMsg", `已下載 ${jwks.keys?.length ?? 0} 把公鑰（${new Date().toLocaleTimeString("zh-TW",{hour12:false})}）`, "ok");
+    onKeyChange();
+  }catch(e){
+    setMsg("#fetchMsg", "下載失敗：" + (e.message || e) + "。可以在瀏覽器打開 " + GOOGLE_JWKS + "，把內容複製貼到上面。", "bad");
+  }
+});
+
+setInterval(()=>{ if(current){ renderClaims(current.header, current.payload); renderNotes(current.header, current.payload); } }, 30000);
+analyze(false);
+</script>
+</body>
+</html>
